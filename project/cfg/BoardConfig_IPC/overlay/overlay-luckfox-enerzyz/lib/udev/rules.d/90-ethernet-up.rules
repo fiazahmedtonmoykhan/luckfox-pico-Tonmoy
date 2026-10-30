@@ -1,0 +1,2 @@
+# Trigger Python script when eth0 comes up
+SUBSYSTEM=="net", ACTION=="add", KERNEL=="eth0", ENV{INTERFACE}=="eth0", RUN+="/bin/sh -c '/usr/sbin/dev_config_runner.sh'"

@@ -2486,7 +2486,9 @@ function __RUN_POST_BUILD_SCRIPT() {
 
 function post_overlay() {
 	[ -n "$RK_POST_OVERLAY" ] || return 0
-
+	
+	msg_info "Appying post overlay: $RK_POST_OVERLAY"
+	
 	local tmp_path
 	tmp_path=$(realpath $BOARD_CONFIG)
 	tmp_path=$(dirname $tmp_path)
@@ -2497,6 +2499,8 @@ function post_overlay() {
 				$tmp_path/overlay/$overlay_dir/* $RK_PROJECT_PACKAGE_ROOTFS_DIR/
 		fi
 	done
+	
+	finish_build
 }
 
 function __RUN_PRE_BUILD_OEM_SCRIPT() {

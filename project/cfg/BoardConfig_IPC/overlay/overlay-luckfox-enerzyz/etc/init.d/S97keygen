@@ -1,0 +1,82 @@
+#!/bin/bash
+
+# Target IP address and timeout configuration
+TARGET_IP="1.1.1.1"
+TIMEOUT_LIMIT=30
+INTERVAL=2
+MIN_YEAR=2026
+# Tag for logger
+LOG_TAG="device-csr"
+
+# Log function
+log() {
+    local level="$1"
+    local message="$2"
+    logger -t "$LOG_TAG" "$level: $message"
+}
+
+# Directory to store device key and CSR
+KEY_DIR="/etc/device_certs"
+KEY_FILE="$KEY_DIR/device_key.pem"
+CSR_FILE="$KEY_DIR/device_csr.pem"
+
+# Extract unique CPU ID from /proc/cpuinfo
+CPU_ID=$(grep -i 'Serial' /proc/cpuinfo | awk '{print $3}')
+
+if [[ -z "$CPU_ID" ]]; then
+    log "WARNING" "Could not find CPU Serial, using hostname as fallback"
+    CPU_ID=$(hostname)
+fi
+
+# Ensure directory exists
+if ! mkdir -p "$KEY_DIR"; then
+    log "ERROR" "Failed to create directory $KEY_DIR"
+    exit 1
+fi
+
+# Check if key and CSR already exist
+if [[ -f "$KEY_FILE" && -f "$CSR_FILE" ]]; then
+    log "INFO" "Key and CSR already exist. Skipping generation."
+    exit 0
+fi
+
+
+
+##waiting for network to timesync for openssl to work
+echo "Waiting for a response from $TARGET_IP (Timeout in ${TIMEOUT_LIMIT}s)..."
+
+until ping -c 1 -W 1 "$TARGET_IP" > /dev/null 2>&1
+do
+    # Check if the total elapsed time has exceeded the timeout limit
+    if [ "$SECONDS" -ge "$TIMEOUT_LIMIT" ]; then
+        echo "Error: Timed out after ${TIMEOUT_LIMIT} seconds without a response."
+        exit 1
+    fi
+
+    echo "No response yet. Retrying in ${INTERVAL} seconds... (${SECONDS}s elapsed)"
+    sleep "$INTERVAL"
+done
+
+#network connected, now sync time if not synced before any SSL lib use
+YEAR=$(date +%Y)
+if [ "$YEAR" -lt "$MIN_YEAR" ]; then
+    logger -t "$NAME" "HTTP Time Syncing..."
+    /usr/bin/http_time_sync
+fi
+
+
+# Generate private key (RSA 2048)
+if openssl genpkey -algorithm RSA -out "$KEY_FILE" -pkeyopt rsa_keygen_bits:2048; then
+    log "INFO" "Device private key generated at $KEY_FILE"
+else
+    log "ERROR" "Failed to generate device private key"
+    exit 1
+fi
+
+# Generate CSR with CPU ID as Common Name
+if openssl req -new -key "$KEY_FILE" -out "$CSR_FILE" -subj "/CN=$CPU_ID"; then
+    log "INFO" "CSR generated at $CSR_FILE with CN=$CPU_ID"
+else
+    log "ERROR" "Failed to generate CSR"
+    exit 1
+fi

@@ -1,0 +1,3 @@
+# ZTE MF833V - Auto bring up usb0 when network interface appears
+
+SUBSYSTEM=="net", KERNEL=="usb0", ACTION=="add", RUN+="/bin/sh -c '/etc/init.d/S80usb0modem &'"

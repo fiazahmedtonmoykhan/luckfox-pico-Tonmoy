@@ -1,0 +1,99 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          enerzyz_rms
+# Required-Start:    $remote_fs $syslog $network
+# Required-Stop:     $remote_fs $syslog $network
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start enerzyz_rms daemon at boot time
+# Description:       Manages the enerzyz_rms background service.
+### END INIT INFO
+
+# Core variables
+DAEMON="/usr/bin/enerzyz_rms"
+NAME="enerzyz_rms"
+PIDFILE="/var/run/${NAME}.pid"
+MIN_YEAR=2026
+# Exit if the binary does not exist
+[ -x "$DAEMON" ] || exit 0
+
+start_daemon_when_network_ready()
+{
+    (
+        logger -t "$NAME" "Waiting for network..."
+
+        until ping -c1 -W2 1.1.1.1 >/dev/null 2>&1; do
+            sleep 5
+        done
+
+        logger -t "$NAME" "Network available"
+
+        YEAR=$(date +%Y)
+        if [ "$YEAR" -lt "$MIN_YEAR" ]; then
+            logger -t "$NAME" "HTTP Time Syncing..."
+            /usr/bin/http_time_sync
+        fi
+
+        logger -t "$NAME" "Starting $NAME daemon..."
+        
+        
+        # Set environment variables for BACnet
+        export BACNET_IFACE='eth0'
+
+        # Launch app directly and save its EXACT PID
+        # Output redirected to logger without breaking process ownership
+        $DAEMON 2>&1 | logger -t "$NAME" &
+        
+        # Capture the real $DAEMON PID
+        echo $! > "$PIDFILE"
+    ) &
+}
+
+case "$1" in
+    start)
+        echo -n "Starting $NAME: "
+        start_daemon_when_network_ready
+        echo "started."
+        ;;
+        
+    stop)
+        echo -n "Stopping $NAME: "
+        if [ -f "$PIDFILE" ]; then
+            PID=$(cat "$PIDFILE")
+            # Kill process group / child process tree if running
+            if kill -0 "$PID" 2>/dev/null; then
+                kill "$PID" 2>/dev/null
+                # Wait briefly to let it exit gracefully
+                sleep 1
+                # Force kill if still hanging
+                kill -9 "$PID" 2>/dev/null
+            fi
+            rm -f "$PIDFILE"
+            echo "stopped."
+        else
+            echo "not running."
+        fi
+        ;;
+        
+    restart)
+        $0 stop
+        sleep 1
+        $0 start
+        ;;
+        
+    status)
+        if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+            echo "$NAME is running (PID: $(cat "$PIDFILE"))."
+        else
+            echo "$NAME is stopped."
+            exit 3
+        fi
+        ;;
+        
+    *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+        ;;
+esac
+
+exit 0

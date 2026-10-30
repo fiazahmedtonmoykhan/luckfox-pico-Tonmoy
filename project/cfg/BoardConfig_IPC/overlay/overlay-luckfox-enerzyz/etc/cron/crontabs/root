@@ -1,0 +1,6 @@
+*/10 * * * * /usr/sbin/modem_power_toggle.sh
+*/10 * * * * /usr/sbin/dns_flush.sh
+*/10 * * * * /usr/sbin/rtc_sync.sh
+*/5 * * * * /usr/sbin/rms_netcheck.sh
+*/2 * * * * /usr/sbin/rms_check.sh
+0 0 * * * /sbin/reboot

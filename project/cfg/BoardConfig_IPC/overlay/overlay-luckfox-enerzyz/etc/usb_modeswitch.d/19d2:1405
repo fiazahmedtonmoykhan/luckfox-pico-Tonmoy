@@ -1,0 +1,8 @@
+DefaultVendor=0x19d2
+DefaultProduct=0x1405
+TargetVendor=0x19d2
+TargetProductList="1506,1406,0016,0166"
+MessageContent="55534243123456780000000000000011062000000100000000000000000000"
+NeedResponse=1
+Interface=0
+CheckSuccess=20

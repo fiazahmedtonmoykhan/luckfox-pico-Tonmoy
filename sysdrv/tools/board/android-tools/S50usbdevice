@@ -14,7 +14,7 @@ ACM_EN=off
 UAC1_EN=off
 UAC2_EN=off
 UVC_EN=off
-RNDIS_EN=on
+RNDIS_EN=off
 HID_EN=off
 
 USB_ATTRIBUTE=0x409

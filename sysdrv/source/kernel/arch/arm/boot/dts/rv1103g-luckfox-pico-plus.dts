@@ -54,7 +54,7 @@
 /**********USB**********/
 &usbdrd_dwc3 {
 	status = "okay";
-	dr_mode = "peripheral";
+	dr_mode = "host";
 };
 
 /**********SPI**********/
@@ -72,8 +72,15 @@
 /**********I2C**********/
 /* I2C3_M1 */
 &i2c3 {
-	status = "disabled";
-	clock-frequency = <100000>;
+    status = "okay";
+    clock-frequency = <400000>;
+    pinctrl-names = "default";        /* add this */
+    pinctrl-0 = <&i2c3m1_xfer>;
+    
+    pcf85363: rtc@51 {
+        compatible = "nxp,pcf85363";
+        reg = <0x51>;
+    };
 };
 
 /* I2C0_M2 */
@@ -85,7 +92,8 @@
 /**********UART**********/
 /* UART3_M1 */
 &uart3 {
-	status = "disabled";
+	status = "okay";
+	pinctrl-0 = <&uart3m1_xfer>;
 };
 
 /* UART4_M1 */

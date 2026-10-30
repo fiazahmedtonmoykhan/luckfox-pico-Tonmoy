@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# Target directory path
+TARGET_DIR="/tmp/enerzyz_ota/"
+
+echo "Checking for directory: $TARGET_DIR"
+if [ ! -d "$TARGET_DIR" ]; then
+    mkdir -p "$TARGET_DIR"
+    echo "Directory created: $TARGET_DIR"
+else
+    echo "Directory already exists."
+fi
